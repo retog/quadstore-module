@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width,initial-scale=1'>
+
+    <title>Quadstore Module</title>
+
+    <link rel='icon' type='image/png' href='/favicon.png'>
+    <link rel='stylesheet' href='/global.css'>
+    <script type="module">
+        import store from "./index.js";
+        console.log(`qs: ${store}`);
+        (async () => {
+        console.log("opening store");
+            await store.open();
+            const result = await store.sparql(`PREFIX schema: <http://schema.org/>
+            INSERT DATA
+            { 
+            <http://example.org/>  schema:name "Date ${Date.now()}" .
+            }`);
+            const result2 = await store.sparql(`
+            SELECT * WHERE { GRAPH ?g { ?s ?p ?o} }
+            `);
+            console.log(result2);
+            console.log(result2.items.map(binding => 
+              Object.fromEntries(Object.entries(binding).map(
+                pair => [pair[0].substr(1),{
+                  value: pair[1].value,
+                    type: pair[1].datatype && (pair[1].datatype.value === 'http://www.w3.org/2001/XMLSchema#string' || pair[1].datatype.value === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString')?
+                      'literal' :
+                      pair[1].termType === 'BlankNode'? 'bnode' : pair[1].termType === 'DefaultGraph'? 'defaultGraph':'uri',
+                  'xml:lang' : pair[1].language
+                }])
+              )));
+        })();
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>
